@@ -6,25 +6,121 @@ import Foundation
 public struct TerritoryAvailabilityInlineCreate: Codable, Identifiable {
 	public var type: `Type`
 	public var id: String?
+	public var attributes: Attributes?
+	public var relationships: Relationships?
 
 	public enum `Type`: String, Codable, CaseIterable {
 		case territoryAvailabilities
 	}
 
-	public init(type: `Type`, id: String? = nil) {
+	public struct Attributes: Codable {
+		public var isAvailable: Bool
+		public var isPreOrderEnabled: Bool?
+		public var releaseDate: String?
+
+		public init(isAvailable: Bool, isPreOrderEnabled: Bool? = nil, releaseDate: String? = nil) {
+			self.isAvailable = isAvailable
+			self.isPreOrderEnabled = isPreOrderEnabled
+			self.releaseDate = releaseDate
+		}
+
+		public init(from decoder: Decoder) throws {
+			let values = try decoder.container(keyedBy: StringCodingKey.self)
+			self.isAvailable = try values.decode(Bool.self, forKey: "available")
+			self.isPreOrderEnabled = try values.decodeIfPresent(Bool.self, forKey: "preOrderEnabled")
+			self.releaseDate = try values.decodeIfPresent(String.self, forKey: "releaseDate")
+		}
+
+		public func encode(to encoder: Encoder) throws {
+			var values = encoder.container(keyedBy: StringCodingKey.self)
+			try values.encode(isAvailable, forKey: "available")
+			try values.encodeIfPresent(isPreOrderEnabled, forKey: "preOrderEnabled")
+			try values.encodeIfPresent(releaseDate, forKey: "releaseDate")
+		}
+	}
+
+	public struct Relationships: Codable {
+		public var territory: Territory
+
+		public struct Territory: Codable {
+			public var data: Data
+
+			public struct Data: Codable, Identifiable {
+				public var type: `Type`
+				public var id: String
+
+				public enum `Type`: String, Codable, CaseIterable {
+					case territories
+				}
+
+				public init(type: `Type`, id: String) {
+					self.type = type
+					self.id = id
+				}
+
+				public init(from decoder: Decoder) throws {
+					let values = try decoder.container(keyedBy: StringCodingKey.self)
+					self.type = try values.decode(`Type`.self, forKey: "type")
+					self.id = try values.decode(String.self, forKey: "id")
+				}
+
+				public func encode(to encoder: Encoder) throws {
+					var values = encoder.container(keyedBy: StringCodingKey.self)
+					try values.encode(type, forKey: "type")
+					try values.encode(id, forKey: "id")
+				}
+			}
+
+			public init(data: Data) {
+				self.data = data
+			}
+
+			public init(from decoder: Decoder) throws {
+				let values = try decoder.container(keyedBy: StringCodingKey.self)
+				self.data = try values.decode(Data.self, forKey: "data")
+			}
+
+			public func encode(to encoder: Encoder) throws {
+				var values = encoder.container(keyedBy: StringCodingKey.self)
+				try values.encode(data, forKey: "data")
+			}
+		}
+
+		public init(territory: Territory) {
+			self.territory = territory
+		}
+
+		public init(from decoder: Decoder) throws {
+			let values = try decoder.container(keyedBy: StringCodingKey.self)
+			self.territory = try values.decode(Territory.self, forKey: "territory")
+		}
+
+		public func encode(to encoder: Encoder) throws {
+			var values = encoder.container(keyedBy: StringCodingKey.self)
+			try values.encode(territory, forKey: "territory")
+		}
+	}
+
+	public init(type: `Type`, id: String? = nil, attributes: Attributes? = nil, relationships: Relationships? = nil) {
 		self.type = type
 		self.id = id
+		self.attributes = attributes
+		self.relationships = relationships
 	}
 
 	public init(from decoder: Decoder) throws {
 		let values = try decoder.container(keyedBy: StringCodingKey.self)
 		self.type = try values.decode(`Type`.self, forKey: "type")
 		self.id = try values.decodeIfPresent(String.self, forKey: "id")
+		self.attributes = try values.decodeIfPresent(Attributes.self, forKey: "attributes")
+		self.relationships = try values.decodeIfPresent(Relationships.self, forKey: "relationships")
 	}
 
 	public func encode(to encoder: Encoder) throws {
 		var values = encoder.container(keyedBy: StringCodingKey.self)
 		try values.encode(type, forKey: "type")
 		try values.encodeIfPresent(id, forKey: "id")
+		try values.encodeIfPresent(attributes, forKey: "attributes")
+		try values.encodeIfPresent(relationships, forKey: "relationships")
 	}
 }
