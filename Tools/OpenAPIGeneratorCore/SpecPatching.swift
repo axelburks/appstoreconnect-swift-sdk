@@ -26,6 +26,7 @@ public enum SpecPatcher {
         case responseErrorSchema = "response-error-schema"
         case appPriceV2InlineCreateFields = "apppricev2inlinecreate-fields"
         case territoryAvailabilityInlineCreateFields = "territoryavailabilityinlinecreate-fields"
+        case winBackOfferPriceInlineCreateFields = "winbackofferpriceinlinecreate-fields"
     }
 
     public struct RuleResult {
@@ -110,6 +111,13 @@ public enum SpecPatcher {
         if territoryAvailability.didChange {
             didChange = true
             changes.append("Added attributes and relationships to TerritoryAvailabilityInlineCreate")
+        }
+
+        let winBackOfferPrice = ensureWinBackOfferPriceInlineCreateFields(&rootObject)
+        rules.append(.init(id: .winBackOfferPriceInlineCreateFields, didChange: winBackOfferPrice.didChange, matchCount: winBackOfferPrice.matchCount))
+        if winBackOfferPrice.didChange {
+            didChange = true
+            changes.append("Added relationships to WinBackOfferPriceInlineCreate")
         }
 
         root = .object(rootObject)
@@ -399,6 +407,70 @@ private func ensureTerritoryAvailabilityInlineCreateFields(_ root: inout Ordered
     if didChange {
         schema["properties"] = .object(properties)
         schemas["TerritoryAvailabilityInlineCreate"] = .object(schema)
+        components["schemas"] = .object(schemas)
+        root["components"] = .object(components)
+    }
+
+    return .init(didChange: didChange, matchCount: 1)
+}
+
+private func ensureWinBackOfferPriceInlineCreateFields(_ root: inout OrderedDictionary<String, JSONValue>) -> PatchOutcome {
+    guard
+        var components = root["components"]?.objectValue,
+        var schemas = components["schemas"]?.objectValue,
+        var schema = schemas["WinBackOfferPriceInlineCreate"]?.objectValue,
+        var properties = schema["properties"]?.objectValue
+    else {
+        return .init(didChange: false, matchCount: 0)
+    }
+
+    var didChange = false
+
+    func obj(_ pairs: [(String, JSONValue)]) -> JSONValue {
+        .object(OrderedDictionary(uniqueKeysWithValues: pairs))
+    }
+
+    if properties["relationships"] == nil {
+        properties["relationships"] = obj([
+            ("type", .string("object")),
+            ("required", .array([.string("territory")])),
+            ("properties", obj([
+                ("territory", obj([
+                    ("type", .string("object")),
+                    ("required", .array([.string("data")])),
+                    ("properties", obj([
+                        ("data", obj([
+                            ("type", .string("object")),
+                            ("required", .array([.string("type"), .string("id")])),
+                            ("properties", obj([
+                                ("type", obj([("type", .string("string")), ("enum", .array([.string("territories")]))])),
+                                ("id", obj([("type", .string("string"))])),
+                            ])),
+                        ])),
+                    ])),
+                ])),
+                ("subscriptionPricePoint", obj([
+                    ("type", .string("object")),
+                    ("required", .array([.string("data")])),
+                    ("properties", obj([
+                        ("data", obj([
+                            ("type", .string("object")),
+                            ("required", .array([.string("type"), .string("id")])),
+                            ("properties", obj([
+                                ("type", obj([("type", .string("string")), ("enum", .array([.string("subscriptionPricePoints")]))])),
+                                ("id", obj([("type", .string("string"))])),
+                            ])),
+                        ])),
+                    ])),
+                ])),
+            ])),
+        ])
+        didChange = true
+    }
+
+    if didChange {
+        schema["properties"] = .object(properties)
+        schemas["WinBackOfferPriceInlineCreate"] = .object(schema)
         components["schemas"] = .object(schemas)
         root["components"] = .object(components)
     }
