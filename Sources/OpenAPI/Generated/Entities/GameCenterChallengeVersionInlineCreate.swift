@@ -3,21 +3,19 @@
 
 import Foundation
 
-@available(*, deprecated, message: "Deprecated")
-public struct GameCenterActivityVersionRelease: Codable, Identifiable {
+public struct GameCenterChallengeVersionInlineCreate: Codable, Identifiable {
 	public var type: `Type`
-	public var id: String
+	public var id: String?
 	public var relationships: Relationships?
-	public var links: ResourceLinks?
 
 	public enum `Type`: String, Codable, CaseIterable {
-		case gameCenterActivityVersionReleases
+		case gameCenterChallengeVersions
 	}
 
 	public struct Relationships: Codable {
-		public var version: Version?
+		public var challenge: Challenge?
 
-		public struct Version: Codable {
+		public struct Challenge: Codable {
 			public var data: Data?
 
 			public struct Data: Codable, Identifiable {
@@ -25,7 +23,7 @@ public struct GameCenterActivityVersionRelease: Codable, Identifiable {
 				public var id: String
 
 				public enum `Type`: String, Codable, CaseIterable {
-					case gameCenterActivityVersions
+					case gameCenterChallenges
 				}
 
 				public init(type: `Type`, id: String) {
@@ -61,41 +59,38 @@ public struct GameCenterActivityVersionRelease: Codable, Identifiable {
 			}
 		}
 
-		public init(version: Version? = nil) {
-			self.version = version
+		public init(challenge: Challenge? = nil) {
+			self.challenge = challenge
 		}
 
 		public init(from decoder: Decoder) throws {
 			let values = try decoder.container(keyedBy: StringCodingKey.self)
-			self.version = try values.decodeIfPresent(Version.self, forKey: "version")
+			self.challenge = try values.decodeIfPresent(Challenge.self, forKey: "challenge")
 		}
 
 		public func encode(to encoder: Encoder) throws {
 			var values = encoder.container(keyedBy: StringCodingKey.self)
-			try values.encodeIfPresent(version, forKey: "version")
+			try values.encodeIfPresent(challenge, forKey: "challenge")
 		}
 	}
 
-	public init(type: `Type`, id: String, relationships: Relationships? = nil, links: ResourceLinks? = nil) {
+	public init(type: `Type`, id: String? = nil, relationships: Relationships? = nil) {
 		self.type = type
 		self.id = id
 		self.relationships = relationships
-		self.links = links
 	}
 
 	public init(from decoder: Decoder) throws {
 		let values = try decoder.container(keyedBy: StringCodingKey.self)
 		self.type = try values.decode(`Type`.self, forKey: "type")
-		self.id = try values.decode(String.self, forKey: "id")
+		self.id = try values.decodeIfPresent(String.self, forKey: "id")
 		self.relationships = try values.decodeIfPresent(Relationships.self, forKey: "relationships")
-		self.links = try values.decodeIfPresent(ResourceLinks.self, forKey: "links")
 	}
 
 	public func encode(to encoder: Encoder) throws {
 		var values = encoder.container(keyedBy: StringCodingKey.self)
 		try values.encode(type, forKey: "type")
-		try values.encode(id, forKey: "id")
+		try values.encodeIfPresent(id, forKey: "id")
 		try values.encodeIfPresent(relationships, forKey: "relationships")
-		try values.encodeIfPresent(links, forKey: "links")
 	}
 }
